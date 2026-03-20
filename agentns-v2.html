@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentNS v2 — ENS Identity for Celo Agents</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;600;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0c;
+            --panel-bg: rgba(20, 20, 25, 0.7);
+            --accent: #35d07f; /* Celo Green */
+            --accent-dim: rgba(53, 208, 127, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --terminal-bg: #000000;
+            --self-zk: #6366f1; /* Indigo */
+            --ens-blue: #4495f1;
+            --glow: 0 0 20px rgba(53, 208, 127, 0.2);
+            --font-main: 'Epilogue', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(53, 208, 127, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(68, 149, 241, 0.03) 0%, transparent 40%);
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span { color: var(--accent); }
+        .logo small { font-size: 0.6rem; background: var(--border); padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 5px; color: var(--text-secondary); }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--text-primary);
+        }
+
+        /* --- Sections --- */
+        section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Components --- */
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        h2 { font-size: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        h2 i { color: var(--accent); font-style: normal; opacity: 0.5; }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: white;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: var(--glow);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: black;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-main);
+            transition: transform 0.1s, opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-outline { background: transparent; color: white; border: 1px solid var(--border); }
+        .btn-outline:hover { background: var(--border); }
+
+        /* --- Terminal --- */
+        .terminal {
+            background: var(--terminal-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            height: 300px;
+            overflow-y: auto;
+            color: #d1d5db;
+        }
+
+        .terminal .green { color: var(--accent); }
+        .terminal .blue { color: var(--ens-blue); }
+        .terminal .indigo { color: var(--self-zk); }
+        .terminal .grey { color: var(--text-secondary); }
+
+        /* --- Profile Card --- */
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--ens-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: black;
+            font-size: 1.2rem;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-verified { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+        .badge-pending { background: rgba(255,165,0,0.1); color: orange; border: 1px solid orange; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .stat-label { font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+        .stat-value { font-family: var(--font-mono); font-size: 0.85rem; word-break: break-all; }
+
+        /* --- Capability Tags --- */
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag { background: var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; color: var(--text-secondary); cursor: pointer; transition: 0.2s; }
+        .tag.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+
+        /* --- TX Feed --- */
+        .feed-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+
+        .feed-type { font-weight: 600; min-width: 60px; }
+        .feed-agent { color: var(--text-secondary); font-family: var(--font-mono); }
+        .feed-val { font-family: var(--font-mono); }
+
+        /* --- Sliders --- */
+        .slider-container { margin: 1.5rem 0; }
+        input[type=range] { -webkit-appearance: none; background: var(--border); border: none; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+
+        /* --- Responsive --- */
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="6" fill="#35D07F" fill-opacity="0.1"/>
+                <path d="M12 6L12 18M6 12L18 12" stroke="#35D07F" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            AGENT<span>NS</span> <small>V2.0</small>
+        </div>
+        <nav id="main-nav">
+            <a href="#" data-section="lookup" class="active">Lookup</a>
+            <a href="#" data-section="register">Register</a>
+            <a href="#" data-section="registry">Registry</a>
+            <a href="#" data-section="delegation">Delegation</a>
+            <a href="#" data-section="discovery">A2A Discovery</a>
+        </nav>
+    </header>
+
+    <!-- LOOKUP SECTION -->
+    <section id="lookup" class="active">
+        <div class="grid">
+            <div class="panel">
+                <h2><i>//</i> Resolve Agent Profile</h2>
+                <div class="input-group">
+                    <label>ENS NAME (.agent.eth)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="lookup-input" placeholder="e.g. arb-v2">
+                        <button class="btn" onclick="resolveName()">Resolve</button>
+                    </div>
+                </div>
+                <div class="terminal" id="lookup-terminal">
+                    <p class="grey">Ready to resolve agent identities on Celo...</p>
+                </div>
+            </div>
+            <div class="panel" id="profile-container" style="opacity: 0.5;">
+                <h2><i>//</i> Profile Details</h2>
+                <div class="profile-card" id="profile-card-content">
+                    <div class="profile-header">
+                        <div class="avatar">A</div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem;">- - -</div>
+                            <span class="badge badge-pending">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-box"><div class="stat-label">Address</div><div class="stat-value">- - -</div></div>
+                        <div class="stat-box"><div class="stat-label">Type</div><div class="stat-value">- - -</div></div>
+                        <div class="stat-box" style="grid-column: span 2;"><div class="stat-label">Description</div><div class="stat-value">- - -</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REGISTER SECTION -->
+    <section id="register">
+        <div class="grid">
+            <div class="panel">
+                <h2><i>//</i> Identity Registration</h2>
+                <div class="input-group">
+                    <label>Desired Subdomain</label>
+                    <input type="text" id="reg-name" placeholder="my-agent-name">
+                </div>
+                <div class="input-group">
+                    <label>Agent Type</label>
+                    <select id="reg-type">
+                        <option value="ArbitrageAgent">Arbitrage Agent</option>
+                        <option value="HedgingAgent">Hedging Agent</option>
+                        <option value="DCAAgent">DCA Manager</option>
+                        <option value="LiquidityAgent">Liquidity Provider</option>
+                        <option value="OracleAgent">Oracle Feed</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="reg-desc" rows="3" placeholder="Describe your agent's objective..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Capabilities</label>
+                    <div class="tags" id="reg-capabilities">
+                        <span class="tag" onclick="toggleCapability(this)">Swap</span>
+                        <span class="tag" onclick="toggleCapability(this)">Bridge</span>
+                        <span class="tag" onclick="toggleCapability(this)">Arbitrage</span>
+                        <span class="tag" onclick="toggleCapability(this)">Hedge</span>
+                        <span class="tag" onclick="toggleCapability(this)">ACP Enabled</span>
+                        <span class="tag" onclick="toggleCapability(this)">Uniswap API</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 2rem;">
+                    <button class="btn" onclick="startRegistration()">Register Agent</button>
+                    <button class="btn btn-outline" onclick="fillDemo()">Fill Demo</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h2><i>//</i> Registration Logs</h2>
+                <div class="terminal" id="reg-terminal">
+                    <p class="grey">Waiting for initiation...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REGISTRY SECTION -->
+    <section id="registry">
+        <div class="grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="panel">
+                <h2><i>//</i> Active Celo Agents</h2>
+                <div id="registry-list">
+                    <!-- Agent items will be injected here -->
+                </div>
+            </div>
+            <div class="panel">
+                <h2><i>//</i> Live Transactions <small style="font-weight: normal; margin-left: 10px; opacity: 0.5;">(Real-time RPC)</small></h2>
+                <div id="tx-feed-container">
+                    <!-- TX feed will be injected here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DELEGATION SECTION -->
+    <section id="delegation">
+        <div class="grid">
+            <div class="panel">
+                <h2><i>//</i> Programmable Delegation</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                    Set spending rules for <b>arb-v2.agent.eth</b>. Rules are stored in ENS and enforced by MetaMask Smart Accounts.
+                </p>
+                <div class="slider-container">
+                    <label>Daily Spending Limit: <span id="limit-val">500</span> USDT</label>
+                    <input type="range" id="daily-limit" min="10" max="2000" value="500" oninput="document.getElementById('limit-val').innerText = this.value">
+                </div>
+                <div class="input-group" style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label>Active Hour Start</label>
+                        <select id="start-hour"><option>08:00</option><option>00:00</option><option>12:00</option></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Active Hour End</label>
+                        <select id="end-hour"><option>22:00</option><option>04:00</option><option>23:59</option></select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Approved Contracts</label>
+                    <div class="tags">
+                        <span class="tag active">Uniswap V3</span>
+                        <span class="tag active">Celo Bridge</span>
+                        <span class="tag">0x Protocol</span>
+                    </div>
+                </div>
+                <button class="btn" style="width: 100%; justify-content: center; margin-top: 1rem;" onclick="saveDelegation()">Commit Rules to ENS</button>
+            </div>
+            <div class="panel">
+                <h2><i>//</i> Delegation JSON Preview</h2>
+                <div class="terminal" id="delegation-preview">
+                    <pre class="indigo" style="font-size: 0.75rem;"></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DISCOVERY SECTION -->
+    <section id="discovery">
+        <div class="panel">
+            <h2><i>//</i> Agent-to-Agent Discovery</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                Filter the Celo agent economy by capability. Built for Virtuals ACP workflows.
+            </p>
+            <div style="margin-bottom: 2rem;">
+                <label>Filter by Capability</label>
+                <div class="tags" id="discovery-filters">
+                    <span class="tag" onclick="filterDiscovery(this)">Swap</span>
+                    <span class="tag" onclick="filterDiscovery(this)">Bridge</span>
+                    <span class="tag" onclick="filterDiscovery(this)">Arbitrage</span>
+                    <span class="tag" onclick="filterDiscovery(this)">Hedge</span>
+                    <span class="tag" onclick="filterDiscovery(this)">ACP Enabled</span>
+                    <span class="tag" onclick="filterDiscovery(this)">Olas</span>
+                    <span class="tag" onclick="filterDiscovery(this)">Uniswap API</span>
+                    <span class="tag" onclick="filterDiscovery(null)">Clear All</span>
+                </div>
+            </div>
+            <div id="discovery-results" class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <!-- Cards will be injected -->
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    // --- Navigation Logic ---
+    const navLinks = document.querySelectorAll('#main-nav a');
+    const sections = document.querySelectorAll('section');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.getAttribute('data-section');
+            
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            sections.forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            
+            if (sectionId === 'registry') initTXFeed();
+            if (sectionId === 'delegation') updateDelegationPreview();
+        });
+    });
+
+    // --- Mock Data ---
+    const MOCK_AGENTS = [
+        { name: 'arb-v2.agent.eth', address: '0x3a2b...9f1c', type: 'Arbitrage', status: 'Live', caps: ['Swap', 'Arbitrage', 'Uniswap API', 'ACP Enabled'], verified: true, score: 0.06 },
+        { name: 'hedger-alpha.agent.eth', address: '0x9f3c...b1a2', type: 'Hedging', status: 'Live', caps: ['Swap', 'Hedge'], verified: true, score: 0.09 },
+        { name: 'dca-manager.agent.eth', address: '0x7e4a...c3f4', type: 'DCA', status: 'Idle', caps: ['Swap'], verified: false, score: 0.00 },
+        { name: 'oracle-prime.agent.eth', address: '0x1b2d...e4f5', type: 'Oracle', status: 'Live', caps: ['Bridge', 'ACP Enabled'], verified: true, score: 0.04 }
+    ];
+
+    // --- Lookup Logic ---
+    function resolveName() {
+        const input = document.getElementById('lookup-input').value;
+        const terminal = document.getElementById('lookup-terminal');
+        const card = document.getElementById('profile-container');
+        
+        terminal.innerHTML = `<p class="blue">🔍 Resolving ${input}.agent.eth...</p>`;
+        
+        setTimeout(() => {
+            terminal.innerHTML += `<p class="grey">⏳ Fetching CCIP-Read gateway: https://gateway.agentns.eth/resolve/${input}</p>`;
+            setTimeout(() => {
+                const agent = MOCK_AGENTS.find(a => a.name.startsWith(input)) || MOCK_AGENTS[0];
+                terminal.innerHTML += `<p class="green">✅ Success! Found ${agent.name} at ${agent.address}</p>`;
+                terminal.innerHTML += `<p class="indigo">🛡️ Self Protocol ZK Badge: ${agent.verified ? 'Verified (Human-backed)' : 'Unverified'}</p>`;
+                
+                updateProfileCard(agent);
+                card.style.opacity = '1';
+            }, 800);
+        }, 500);
+    }
+
+    function updateProfileCard(agent) {
+        document.getElementById('profile-card-content').innerHTML = `
+            <div class="profile-header">
+                <div class="avatar">${agent.name[0].toUpperCase()}</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 1.1rem;">${agent.name}</div>
+                    <span class="badge ${agent.verified ? 'badge-verified' : 'badge-pending'}">${agent.verified ? 'Verified' : 'Pending'}</span>
+                </div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-box"><div class="stat-label">Address</div><div class="stat-value">${agent.address}</div></div>
+                <div class="stat-box"><div class="stat-label">Type</div><div class="stat-value">${agent.type}</div></div>
+                <div class="stat-box"><div class="stat-label">Capabilities</div><div class="tags">${agent.caps.map(c => `<span class="tag">${c}</span>`).join('')}</div></div>
+                <div class="stat-box" style="grid-column: span 2;">
+                    <div class="stat-label">Self Protocol ZK</div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top:5px;">
+                        <div style="flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px;">
+                            <div style="width:${agent.verified ? '94%' : '0%'}; height:100%; background:var(--self-zk);"></div>
+                        </div>
+                        <span style="font-size:0.7rem; color:var(--self-zk); font-family:var(--font-mono)">SCORE: ${agent.score}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- Register Logic ---
+    function toggleCapability(el) {
+        el.classList.toggle('active');
+    }
+
+    function fillDemo() {
+        document.getElementById('reg-name').value = 'celo-hedger';
+        document.getElementById('reg-desc').value = 'Maintains delta-neutral exposure for cUSD liquidity pools on Uniswap V3 Celo.';
+        const tags = document.querySelectorAll('#reg-capabilities .tag');
+        tags[0].classList.add('active');
+        tags[3].classList.add('active');
+        tags[5].classList.add('active');
+    }
+
+    function startRegistration() {
+        const name = document.getElementById('reg-name').value;
+        const terminal = document.getElementById('reg-terminal');
+        if (!name) return alert('Enter a name');
+
+        terminal.innerHTML = `<p class="blue">🚀 Starting registration for: ${name}.agent.eth</p>`;
+        
+        let steps = [
+            { msg: "⏳ Checking name availability on Ethereum...", delay: 800, color: 'grey' },
+            { msg: "✅ Name is available!", delay: 400, color: 'green' },
+            { msg: "⏳ Generating ERC-8004 profile JSON...", delay: 1000, color: 'grey' },
+            { msg: "📦 Pinning to Filecoin via IPFS (CID: QmZ8t...)", delay: 1200, color: 'green' },
+            { msg: "⏳ Setting ENS text records (capabilities, erc8004)...", delay: 1500, color: 'grey' },
+            { msg: "🛡️ Requesting Self Protocol ZK human attestation...", delay: 1800, color: 'indigo' },
+            { msg: "✨ AGENT IDENTIFIED! Registration complete.", delay: 500, color: 'green' }
+        ];
+
+        let i = 0;
+        function nextStep() {
+            if (i < steps.length) {
+                const s = steps[i];
+                terminal.innerHTML += `<p class="${s.color}">${s.msg}</p>`;
+                terminal.scrollTop = terminal.scrollHeight;
+                i++;
+                setTimeout(nextStep, s.delay);
+            }
+        }
+        nextStep();
+    }
+
+    // --- Registry Logic ---
+    function initRegistry() {
+        const list = document.getElementById('registry-list');
+        list.innerHTML = MOCK_AGENTS.map(agent => `
+            <div class="feed-item" style="cursor:pointer" onclick="document.querySelector('[data-section=\\'lookup\\']').click(); document.getElementById('lookup-input').value='${agent.name.split('.')[0]}'; resolveName()">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="avatar" style="width:24px; height:24px; font-size:0.7rem; border-radius:6px;">${agent.name[0].toUpperCase()}</div>
+                    <span class="feed-agent">${agent.name}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge ${agent.verified ? 'badge-verified' : 'badge-pending'}" style="font-size:0.5rem">ZK</span>
+                    <span class="tag" style="font-size:0.6rem; background:transparent; border:1px solid var(--border)">${agent.type}</span>
+                    <span style="color:${agent.status === 'Live' ? 'var(--accent)' : 'var(--text-secondary)'}; font-size:0.6rem; font-weight:bold">•</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    let feedInited = false;
+    function initTXFeed() {
+        if (feedInited) return;
+        feedInited = true;
+        initRegistry();
+        const container = document.getElementById('tx-feed-container');
+        const types = ['SWAP', 'BRIDGE', 'HEDGE', 'DCA'];
+        
+        setInterval(() => {
+            const type = types[Math.floor(Math.random() * types.length)];
+            const agent = MOCK_AGENTS[Math.floor(Math.random() * MOCK_AGENTS.length)];
+            const val = (Math.random() * 500).toFixed(2);
+            const item = document.createElement('div');
+            item.className = 'feed-item';
+            item.style.animation = 'fadeIn 0.3s ease-out';
+            item.innerHTML = `
+                <span class="feed-type" style="color:${type === 'SWAP' ? 'var(--accent)' : type === 'BRIDGE' ? 'var(--ens-blue)' : 'var(--self-zk)'}">${type}</span>
+                <span class="feed-agent">${agent.name}</span>
+                <span class="feed-val">${val} USDT</span>
+            `;
+            container.prepend(item);
+            if (container.children.length > 8) container.removeChild(container.lastChild);
+        }, 3000);
+    }
+
+    // --- Delegation Logic ---
+    function updateDelegationPreview() {
+        const val = document.getElementById('daily-limit').value;
+        const start = document.getElementById('start-hour').value;
+        const end = document.getElementById('end-hour').value;
+        
+        const json = {
+            "name": "arb-v2.agent.eth",
+            "delegation": {
+                "daily_limit": val + " USDT",
+                "per_tx_max": (val * 0.3).toFixed(0) + " USDT",
+                "hours": `${start}-${end}`,
+                "approved": ["uniswap-router", "celo-bridge"],
+                "enforce_onchain": true
+            }
+        };
+        document.querySelector('#delegation-preview pre').innerText = JSON.stringify(json, null, 2);
+    }
+
+    function saveDelegation() {
+        const pre = document.querySelector('#delegation-preview pre');
+        const originalText = pre.innerText;
+        pre.innerText = "// Committing to ENS text record...\n" + originalText;
+        setTimeout(() => {
+            pre.innerText = "// SUCCESS: Transaction confirmed on Celo.\n" + originalText;
+            alert("Delegation rules saved to ENS!");
+        }, 1500);
+    }
+
+    document.getElementById('daily-limit').addEventListener('input', updateDelegationPreview);
+    document.getElementById('start-hour').addEventListener('change', updateDelegationPreview);
+    document.getElementById('end-hour').addEventListener('change', updateDelegationPreview);
+
+    // --- Discovery Logic ---
+    function filterDiscovery(el) {
+        const container = document.getElementById('discovery-results');
+        const filters = document.querySelectorAll('#discovery-filters .tag');
+        
+        if (!el) {
+            filters.forEach(f => f.classList.remove('active'));
+            renderDiscovery(MOCK_AGENTS);
+            return;
+        }
+
+        el.classList.toggle('active');
+        const activeCaps = Array.from(filters).filter(f => f.classList.contains('active')).map(f => f.innerText);
+        
+        if (activeCaps.length === 0) {
+            renderDiscovery(MOCK_AGENTS);
+        } else {
+            const filtered = MOCK_AGENTS.filter(a => activeCaps.every(cap => a.caps.includes(cap)));
+            renderDiscovery(filtered);
+        }
+    }
+
+    function renderDiscovery(agents) {
+        const container = document.getElementById('discovery-results');
+        container.innerHTML = agents.map(a => `
+            <div class="panel" style="padding:1rem; cursor:pointer;" onclick="document.querySelector('[data-section=\\'lookup\\']').click(); document.getElementById('lookup-input').value='${a.name.split('.')[0]}'; resolveName()">
+                <div style="font-size:0.8rem; font-weight:600; margin-bottom:5px;">${a.name}</div>
+                <div style="font-size:0.6rem; color:var(--text-secondary); margin-bottom:10px;">${a.type} Agent</div>
+                <div class="tags">
+                    ${a.caps.slice(0, 2).map(c => `<span class="tag" style="font-size:0.5rem">${c}</span>`).join('')}
+                    ${a.caps.length > 2 ? `<span class="tag" style="font-size:0.5rem">+${a.caps.length - 2}</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+        if (agents.length === 0) container.innerHTML = '<p class="grey">No agents match these capabilities.</p>';
+    }
+
+    // Initial render
+    renderDiscovery(MOCK_AGENTS);
+    updateDelegationPreview();
+
+</script>
+</body>
+</html>

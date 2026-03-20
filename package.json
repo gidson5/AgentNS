@@ -1,0 +1,31 @@
+{
+  "name": "agentns-v2",
+  "version": "2.0.0",
+  "description": "ENS-powered identity, verification, and registry layer for Celo agents.",
+  "main": "scripts/resolve.js",
+  "scripts": {
+    "start": "node gateway/server.js",
+    "register": "node scripts/register.js",
+    "resolve": "node scripts/resolve.js",
+    "verify": "node scripts/self-verify.js",
+    "delegate": "node scripts/set-delegation.js",
+    "feed": "node feeds/tx-feed.js"
+  },
+  "dependencies": {
+    "@ensdomains/ensjs": "^3.0.0",
+    "dotenv": "^16.6.1",
+    "ethers": "^6.16.0",
+    "express": "^4.18.2",
+    "ipfs-http-client": "^60.0.1"
+  },
+  "keywords": [
+    "ENS",
+    "Celo",
+    "Identity",
+    "ZK",
+    "Agents",
+    "ERC-8004"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

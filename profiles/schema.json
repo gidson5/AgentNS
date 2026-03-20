@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentNS ERC-8004 Profile",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "pattern": ".*\\.agent\\.eth$" },
+    "type": { "type": "string" },
+    "version": { "type": "string" },
+    "network": { "type": "string", "const": "celo" },
+    "address": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" },
+    "capabilities": { "type": "array", "items": { "type": "string" } },
+    "self_protocol": {
+      "type": "object",
+      "properties": {
+        "verified": { "type": "boolean" },
+        "sybil_score": { "type": "number" },
+        "attestation_id": { "type": "string" },
+        "proof_type": { "type": "string", "const": "groth16" }
+      }
+    },
+    "delegation": {
+      "type": "object",
+      "properties": {
+        "daily_limit": { "type": "string" },
+        "per_tx_max": { "type": "string" },
+        "hours": { "type": "string" },
+        "approved": { "type": "array", "items": { "type": "string" } },
+        "enforce_onchain": { "type": "boolean" }
+      }
+    },
+    "olas_id": { "type": "string" },
+    "description": { "type": "string" },
+    "registered": { "type": "string", "format": "date-time" },
+    "erc8004": { "type": "boolean" }
+  },
+  "required": ["name", "address", "type", "network", "erc8004"]
+}
