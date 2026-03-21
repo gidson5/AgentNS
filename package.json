@@ -1,6 +1,6 @@
 {
-  "name": "agentns-v2",
-  "version": "2.0.0",
+  "name": "agentns-v3",
+  "version": "3.0.0",
   "description": "ENS-powered identity, verification, and registry layer for Celo agents.",
   "main": "scripts/resolve.js",
   "scripts": {

@@ -12,9 +12,9 @@ async function registerAgent({ name, type, capabilities }) {
   // Load private key and RPC
   const privateKey = process.env.CELO_PRIVATE_KEY;
   if (!privateKey) {
-     console.error("❌ CRITICAL: No CELO_PRIVATE_KEY found in .env file.");
-     console.error("Please create a .env file and add your private key to interact with the live network.");
-     return;
+    console.error("❌ CRITICAL: No CELO_PRIVATE_KEY found in .env file.");
+    console.error("Please create a .env file and add your private key to interact with the live network.");
+    return;
   }
 
   try {
@@ -25,10 +25,10 @@ async function registerAgent({ name, type, capabilities }) {
 
     // Replace this string with the actual deployed contract address on Celo after you deploy the Sol file
     const contractAddress = process.env.AGENT_REGISTRY_ADDRESS || "0x0000000000000000000000000000000000000000";
-    
+
     if (contractAddress === "0x0000000000000000000000000000000000000000") {
-        console.error("❌ CRITICAL: You must deploy AgentRegistry.sol first and set AGENT_REGISTRY_ADDRESS in .env");
-        return;
+      console.error("❌ CRITICAL: You must deploy AgentRegistry.sol first and set AGENT_REGISTRY_ADDRESS in .env");
+      return;
     }
 
     const abi = [
@@ -43,7 +43,7 @@ async function registerAgent({ name, type, capabilities }) {
 
     console.log("⏳ Submitting transaction to Celo Mainnet...");
     const tx = await registryContract.registerAgent(name, profileCID, capabilities);
-    
+
     console.log(`✅ Transaction submitted! Hash: ${tx.hash}`);
     console.log("⏳ Waiting for 1 block confirmation...");
     await tx.wait(1);
@@ -52,7 +52,7 @@ async function registerAgent({ name, type, capabilities }) {
     console.log(`🔗 View on Explorer: https://celoscan.io/tx/${tx.hash}`);
 
   } catch (error) {
-     console.error(`❌ Live Network Error: ${error.message}`);
+    console.error(`❌ Live Network Error: ${error.message}`);
   }
 }
 

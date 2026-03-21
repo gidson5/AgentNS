@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentNS v2 — ENS Identity for Celo Agents</title>
+    <title>AgentNS v3 — ENS Identity for Celo Agents</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;600;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -273,8 +273,8 @@
 
         /* --- Sliders --- */
         .slider-container { margin: 1.5rem 0; }
-        input[type=range] { -webkit-appearance: none; background: var(--border); border: none; height: 4px; border-radius: 2px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+        input[type=range] { appearance: none; -webkit-appearance: none; background: var(--border); border: none; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; height: 16px; width: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; }
 
         /* --- Responsive --- */
         @media (max-width: 900px) {
@@ -291,7 +291,7 @@
                 <rect x="2" y="2" width="20" height="20" rx="6" fill="#35D07F" fill-opacity="0.1"/>
                 <path d="M12 6L12 18M6 12L18 12" stroke="#35D07F" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            AGENT<span>NS</span> <small>V2.0</small>
+            AGENT<span>NS</span> <small>V3.0</small>
         </div>
         <nav id="main-nav">
             <a href="#" data-section="lookup" class="active">Lookup</a>
@@ -299,6 +299,7 @@
             <a href="#" data-section="registry">Registry</a>
             <a href="#" data-section="delegation">Delegation</a>
             <a href="#" data-section="discovery">A2A Discovery</a>
+            <a href="#" data-section="ai" style="color: var(--accent);">✦ Agent AI</a>
         </nav>
     </header>
 
@@ -467,6 +468,45 @@
             </div>
             <div id="discovery-results" class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                 <!-- Cards will be injected -->
+            </div>
+        </div>
+    </section>
+
+    <!-- AI SECTION -->
+    <section id="ai">
+        <div class="grid">
+            <div class="panel" style="display: flex; flex-direction: column; height: 600px;">
+                <h2><i style="color: var(--accent);">✦</i> Agent AI Assistant</h2>
+                <div id="chat-history" style="flex: 1; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: rgba(0,0,0,0.3); font-size: 0.9rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: var(--accent); font-weight: bold;">Claude:</span> Hello! Describe the agent you want to build on Celo, and I'll help configure its ENS identity, capabilities, and delegation rules.
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Prompts:</div>
+                    <div class="tags" style="gap: 5px;">
+                        <span class="tag" onclick="fillPrompt(this)">I want to build an FX hedging bot on Celo</span>
+                        <span class="tag" onclick="fillPrompt(this)">What ENS name should I pick for an arbitrage agent?</span>
+                        <span class="tag" onclick="fillPrompt(this)">Suggest delegation rules for a $500/day trading bot</span>
+                        <span class="tag" onclick="fillPrompt(this)">Explain ERC-8004 and why my agent needs it</span>
+                        <span class="tag" onclick="fillPrompt(this)">How do I make my agent sybil-resistant?</span>
+                        <span class="tag" onclick="fillPrompt(this)">What capabilities should a DCA agent have?</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ai-input" placeholder="Type your request here..." style="flex: 1;" onkeypress="if(event.key === 'Enter') sendPrompt()">
+                    <button class="btn" onclick="sendPrompt()" id="ai-btn">Send</button>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2><i>//</i> AI Configuration Card</h2>
+                <div id="ai-config-card" style="border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: rgba(0,0,0,0.3); min-height: 200px;">
+                    <p class="grey" style="text-align: center; margin-top: 2rem;">Awaiting AI recommendations...</p>
+                </div>
+                <button class="btn" style="width: 100%; justify-content: center; margin-top: 1rem; opacity: 0.5; pointer-events: none;" id="apply-ai-btn" onclick="applyConfig()">Apply to Registration Form</button>
             </div>
         </div>
     </section>
@@ -703,6 +743,130 @@
             </div>
         `).join('');
         if (agents.length === 0) container.innerHTML = '<p class="grey">No agents match these capabilities.</p>';
+    }
+
+    // --- AI Assistant Logic ---
+    let aiConfigDraft = null;
+
+    function fillPrompt(el) {
+        document.getElementById('ai-input').value = el.innerText;
+    }
+
+    async function sendPrompt() {
+        const inputStr = document.getElementById('ai-input').value;
+        if (!inputStr) return;
+        
+        const history = document.getElementById('chat-history');
+        const configCard = document.getElementById('ai-config-card');
+        const applyBtn = document.getElementById('apply-ai-btn');
+
+        // Add user message
+        history.innerHTML += `<div style="margin-bottom: 1rem;"><span style="color: var(--text-primary); font-weight: bold;">You:</span> ${inputStr}</div>`;
+        document.getElementById('ai-input').value = '';
+        history.scrollTop = history.scrollHeight;
+
+        // Show thinking
+        const thinkingId = 'think-' + Date.now();
+        history.innerHTML += `<div id="${thinkingId}" style="margin-bottom: 1rem; color: var(--text-secondary);"><span style="color: var(--accent); font-weight: bold;">Claude:</span> <i>Thinking...</i></div>`;
+        history.scrollTop = history.scrollHeight;
+
+        try {
+            // Simulating API response logic for demo since Vercel is not hooked up here
+            setTimeout(() => {
+                document.getElementById(thinkingId).remove();
+                
+                let responseText = "Here is a configuration based on your request. I've set up an appropriate ENS name, type, and capabilities.";
+                let mockConfig = {
+                    name: "ai-bot",
+                    type: "HedgingAgent",
+                    description: inputStr,
+                    capabilities: ["Swap", "Hedge"],
+                    daily_limit: "500",
+                    hours_start: "08:00",
+                    hours_end: "22:00"
+                };
+
+                if (inputStr.toLowerCase().includes('fx hedging')) {
+                    mockConfig.name = "fx-hedger-v1";
+                    mockConfig.type = "HedgingAgent";
+                    mockConfig.capabilities = ["Swap", "Hedge", "ACP Enabled"];
+                } else if (inputStr.toLowerCase().includes('arbitrage')) {
+                    mockConfig.name = "arb-prime";
+                    mockConfig.type = "ArbitrageAgent";
+                    mockConfig.capabilities = ["Swap", "Arbitrage", "Uniswap API"];
+                } else if (inputStr.toLowerCase().includes('dca')) {
+                    mockConfig.name = "dca-steady";
+                    mockConfig.type = "DCAAgent";
+                    mockConfig.capabilities = ["Swap"];
+                }
+
+                history.innerHTML += `<div style="margin-bottom: 1rem;"><span style="color: var(--accent); font-weight: bold;">Claude:</span> ${responseText}</div>`;
+                history.scrollTop = history.scrollHeight;
+
+                // Render Config Card
+                aiConfigDraft = mockConfig;
+                configCard.innerHTML = `
+                    <div style="font-family: var(--font-mono); font-size: 0.85rem;">
+                        <div style="margin-bottom: 10px;"><span style="color: var(--text-secondary)">Name:</span> <span style="color: var(--accent)">${mockConfig.name}.agent.eth</span></div>
+                        <div style="margin-bottom: 10px;"><span style="color: var(--text-secondary)">Type:</span> <span style="color: #fff">${mockConfig.type}</span></div>
+                        <div style="margin-bottom: 10px;"><span style="color: var(--text-secondary)">Capabilities:</span>
+                            <div class="tags" style="margin-top: 5px;">${mockConfig.capabilities.map(c => `<span class="tag active">${c}</span>`).join('')}</div>
+                        </div>
+                        <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
+                            <div style="color: var(--ens-blue); font-weight: bold; margin-bottom: 5px;">Delegation Rules</div>
+                            <div><span style="color: var(--text-secondary)">Daily Limit:</span> <span style="color: #fff">${mockConfig.daily_limit} USDT</span></div>
+                            <div><span style="color: var(--text-secondary)">Active:</span> <span style="color: #fff">${mockConfig.hours_start} - ${mockConfig.hours_end}</span></div>
+                        </div>
+                    </div>
+                `;
+                configCard.style.opacity = '1';
+                
+                applyBtn.style.opacity = '1';
+                applyBtn.style.pointerEvents = 'auto';
+            }, 1200);
+
+        } catch (e) {
+            document.getElementById(thinkingId).remove();
+            history.innerHTML += `<div style="margin-bottom: 1rem; color: red;"><span style="font-weight: bold;">Error:</span> Failed to connect to AI server.</div>`;
+        }
+    }
+
+    function applyConfig() {
+        if (!aiConfigDraft) return;
+        
+        // Go to Register section
+        document.querySelector('[data-section="register"]').click();
+        
+        // Fill form
+        document.getElementById('reg-name').value = aiConfigDraft.name;
+        document.getElementById('reg-desc').value = aiConfigDraft.description;
+        
+        const typeSelect = document.getElementById('reg-type');
+        for (let i = 0; i < typeSelect.options.length; i++) {
+            if (typeSelect.options[i].value === aiConfigDraft.type) {
+                typeSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Fill capabilities
+        const tags = document.querySelectorAll('#reg-capabilities .tag');
+        tags.forEach(t => t.classList.remove('active'));
+        tags.forEach(t => {
+            if (aiConfigDraft.capabilities.includes(t.innerText)) {
+                t.classList.add('active');
+            }
+        });
+        
+        // Fill delegation limits
+        const limitRange = document.getElementById('daily-limit');
+        if (limitRange) {
+            limitRange.value = aiConfigDraft.daily_limit;
+            document.getElementById('limit-val').innerText = aiConfigDraft.daily_limit;
+            updateDelegationPreview();
+        }
+        
+        alert("Configuration applied! You can now review and register the agent.");
     }
 
     // Initial render
