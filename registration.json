@@ -1,0 +1,17 @@
+{
+  "name": "AgentNS AI",
+  "description": "An AI configured single ENS-powered identity layer for Celo agents.",
+  "agentHarness": "other",
+  "agentHarnessOther": "Antigravity",
+  "model": "gemini-2.0-flash",
+  "humanInfo": {
+    "name": "Daniel Gideon Uto",
+    "email": "gidsondaniel@gmail.com",
+    "socialMediaHandle": "@iam_chuks2",
+    "background": "builder",
+    "cryptoExperience": "yes",
+    "aiAgentExperience": "no",
+    "codingComfort": 7,
+    "problemToSolve": "Celo agents are just wallet addresses — opaque, untrusted, and undiscoverable. AgentNS fixes that with a single ENS-powered identity layer"
+  }
+}

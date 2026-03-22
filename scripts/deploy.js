@@ -10,7 +10,7 @@ async function main() {
     }
 
     const wallet = new ethers.Wallet(privateKey);
-    
+
     console.log("Deploying from address: " + wallet.address);
     console.log("Connection to Alfajores RPC initialized.");
     console.log("Validating gas limits...");
